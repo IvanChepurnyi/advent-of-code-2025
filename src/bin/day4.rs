@@ -22,7 +22,7 @@ fn part1_available_rolls<const L: usize>(grid: &[[i8; L]], ) -> u64 {
         .fold(
             VecDeque::new(),
             |move_list, (row, line)| line.iter().enumerate()
-                .fold(move_list, |mut move_list, (col, value)| {
+                .fold(move_list, |mut move_list, (col, _value)| {
                     move_list.push_back(Cell::Value(row, col));
                     move_list
                 }));
@@ -30,7 +30,7 @@ fn part1_available_rolls<const L: usize>(grid: &[[i8; L]], ) -> u64 {
     let mut total = 0;
 
     while let Some(cell) = move_list.pop_front() {
-        if (cell.value(&grid) == -1) {
+        if cell.value(&grid) == -1 {
             if cell.neighbours(grid).reduce_sum() > -4 {
                 total+=1;
             }
@@ -45,7 +45,7 @@ fn part2_available_rolls<const L: usize>(grid: &mut [[i8; L]]) -> u64 {
         .fold(
             VecDeque::new(),
             |move_list, (row, line)| line.iter().enumerate()
-                .fold(move_list, |mut move_list, (col, value)| {
+                .fold(move_list, |mut move_list, (col, _value)| {
                     move_list.push_back(Cell::Value(row, col));
                     move_list
                 }));
@@ -53,7 +53,7 @@ fn part2_available_rolls<const L: usize>(grid: &mut [[i8; L]]) -> u64 {
     let mut total = 0;
 
     while let Some(cell) = move_list.pop_front() {
-        if (cell.value(&grid) == -1) {
+        if cell.value(&grid) == -1 {
             if cell.neighbours(grid).reduce_sum() > -4 {
                 total+=1;
                 cell.remove(grid);
@@ -168,7 +168,7 @@ impl Cell {
                     *row,
                     *cell
                 ) {
-                    if (cell.value(grid) == -1) {
+                    if cell.value(grid) == -1 {
                         cells.push_back(cell);
                     }
                 }
