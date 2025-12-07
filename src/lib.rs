@@ -1,4 +1,6 @@
+#![feature(portable_simd)]
 use std::ops::{AddAssign, MulAssign};
+use std::simd::prelude::*;
 
 pub trait NumberExt {
     fn from_bytes(slice: &[u8]) -> Self;
@@ -9,12 +11,32 @@ impl <T: MulAssign + AddAssign + From<u8> + Copy> NumberExt for T {
         let mut accum = 0u8.into();
         let decimal = 10u8.into();
         for byte in slice {
+            if *byte < b'0' {
+                continue
+            }
             accum *= decimal;
             accum += (byte - b'0').into();
         }
 
         accum
     }
+}
+
+
+const NEW_LINES: u8x64 = u8x64::splat(b'\n');
+
+pub fn line(input: &[u8]) -> (&[u8], &[u8]) {
+    let mut new_line_pos = 0;
+    for scan in input.chunks(64) {
+        let scan = u8x64::load_or_default(scan);
+        let new_line = scan.simd_eq(NEW_LINES).first_set();
+        if let Some(new_line) = new_line {
+            return (&input[..new_line_pos + new_line], &input[new_line_pos + new_line + 1..]);
+        }
+        new_line_pos += 64;
+    };
+
+    (input, &[])
 }
 
 pub fn digits(value: u64) -> u8 {
@@ -51,5 +73,8 @@ mod tests {
         assert_eq!(u8::from_bytes(b"123"), 123);
         assert_eq!(u16::from_bytes(b"1023"), 1023);
         assert_eq!(u32::from_bytes(b"1023123123"), 1023123123);
+        assert_eq!(u32::from_bytes(b"   1023123123  "), 1023123123);
+        assert_eq!(u32::from_bytes(b"   1023123123"), 1023123123);
+        assert_eq!(u32::from_bytes(b"1023123123   "), 1023123123);
     }
 }
