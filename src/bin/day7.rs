@@ -53,10 +53,8 @@ fn process_beam<F: FnMut(usize, usize, usize)>(
     }
     input = remainder;
 
-    let _count = 0;
     while input.len() > 0 {
         let (mut current_line, remainder) = line(input);
-
         let mut debug_line = [EMPTY; 256];
         let current_beam_line = beam_line;
         debug_line[..current_line.len()].copy_from_slice(current_line);
