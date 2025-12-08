@@ -39,6 +39,29 @@ pub fn line(input: &[u8]) -> (&[u8], &[u8]) {
     (input, &[])
 }
 
+pub struct Lines<'a> {
+    input: &'a[u8]
+}
+
+pub fn lines(input: &[u8]) -> Lines<'_> {
+    Lines { input }
+}
+
+impl <'a> Iterator for Lines<'a> {
+    type Item = &'a[u8];
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.input.len() {
+            0 => None,
+            _ => {
+                let (line, remainder) = line(self.input);
+                self.input = remainder;
+                Some(line)
+            }
+        }
+    }
+}
+
 pub fn digits(value: u64) -> u8 {
     value.checked_ilog10().unwrap_or(0) as u8 + 1
 }
@@ -76,5 +99,15 @@ mod tests {
         assert_eq!(u32::from_bytes(b"   1023123123  "), 1023123123);
         assert_eq!(u32::from_bytes(b"   1023123123"), 1023123123);
         assert_eq!(u32::from_bytes(b"1023123123   "), 1023123123);
+    }
+
+    #[test]
+    fn lines_iterator() {
+        let mut lines = lines(b"first\nsecond\nthird");
+
+        assert_eq!(lines.next(), Some(b"first".as_ref()));
+        assert_eq!(lines.next(), Some(b"second".as_ref()));
+        assert_eq!(lines.next(), Some(b"third".as_ref()));
+        assert_eq!(lines.next(), None)
     }
 }
