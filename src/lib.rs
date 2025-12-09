@@ -39,6 +39,7 @@ pub fn line(input: &[u8]) -> (&[u8], &[u8]) {
     (input, &[])
 }
 
+#[derive(Clone, Copy)]
 pub struct Lines<'a> {
     input: &'a[u8]
 }
