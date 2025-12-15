@@ -1,6 +1,6 @@
 #![feature(portable_simd)]
+extern crate core;
 
-use std::collections::btree_map::Iter;
 use std::collections::BTreeMap;
 use std::ops::ControlFlow;
 use std::simd::prelude::*;
@@ -26,36 +26,22 @@ struct Parser<'a> {
 }
 
 struct HeapWithLimit {
-    limit: usize,
-    items: BTreeMap<u64,(Coordinate, Coordinate)>,
-    iterator: Option<Iter<'static, usize, (Coordinate, Coordinate)>>,
+    items: BTreeMap<u64, (Coordinate, Coordinate)>
 }
 
 impl HeapWithLimit {
-    pub fn new(limit: usize) -> Self {
+    fn new() -> Self {
         Self {
-            items: BTreeMap::new(),
-            limit,
-            index: 0,
+            items: BTreeMap::new()
         }
     }
 
-    pub fn add(&mut self, distance: u64, left: Coordinate, right: Coordinate) {
+    fn add(&mut self, distance: u64, left: Coordinate, right: Coordinate) {
         self.items.insert(distance, (left, right));
     }
-}
 
-impl Iterator for HeapWithLimit {
-    type Item = (Coordinate, Coordinate);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.index == self.items.len() {
-            return None;
-        }
-
-        let (_, left, right) = self.items[self.index];
-        self.index += 1;
-        Some((left, right))
+    fn iter(&self) -> impl Iterator<Item=(Coordinate, Coordinate)> {
+        self.items.iter().map(|(k,(v))| (v.0, v.1))
     }
 }
 
@@ -107,23 +93,22 @@ fn main() {
     let input = parse_input(include_bytes!("../../inputs/day8.txt"));
 
     println!("Part 1 Result: {}", part_one(input, 1000));
-    println!("Part 2 Result: {}", part_two(input, 500000));
+    println!("Part 2 Result: {}", part_two(input));
 }
 
 fn part_one(parser: Parser, limit: usize) -> usize {
+    let (mut distance, total) = calculate_initial_state(parser);
 
-
-    let mut circuits = distance.fold(Vec::new(), connect_circuit);
+    let mut circuits = distance.iter().take(limit).fold(Vec::new(), connect_circuit);
     circuits.sort_by(|a, b| b.len().cmp(&a.len()));
 
     circuits.into_iter().take(3).fold(1, |acc, v| acc * v.len())
 }
 
-fn part_two(parser: Parser, limit: usize) -> u64 {
-    let (mut distance, total) = calculate_initial_state(parser, limit);
+fn part_two(parser: Parser) -> u64 {
+    let (distance, total) = calculate_initial_state(parser);
 
-
-    let result = distance.try_fold(
+    let result = distance.iter().try_fold(
         Vec::new(),
         connect_circuit_until_circuit_length(total)
     );
@@ -132,9 +117,9 @@ fn part_two(parser: Parser, limit: usize) -> u64 {
     value.0.0 * value.1.0
 }
 
-fn calculate_initial_state(parser: Parser, limit: usize) -> (HeapWithLimit, usize) {
+fn calculate_initial_state(parser: Parser) -> (HeapWithLimit, usize) {
     let (junction_boxes, distance) = parser.fold(
-        (Vec::new(), HeapWithLimit::new(limit)),
+        (Vec::new(), HeapWithLimit::new()),
         |(mut vectors, v), line| {
             let v = vectors.iter().fold(v, |mut v, other| {
                 v.add(line.distance(other), *other, line);
@@ -245,7 +230,7 @@ mod tests {
     #[test]
     fn test_case_part2() {
         assert_eq!(
-            part_two(test_data(), 190),
+            part_two(test_data()),
             25272
         );
     }
