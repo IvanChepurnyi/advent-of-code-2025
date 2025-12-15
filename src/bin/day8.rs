@@ -1,15 +1,11 @@
 #![feature(portable_simd)]
 
-use std::cmp::{Reverse};
 use std::collections::HashSet;
 use std::ops::ControlFlow;
 use std::simd::prelude::*;
-use std::slice::Iter;
 use aoc2025::{lines, Lines, NumberExt};
 
 const PATTERN: u8x32 = u8x32::splat(b',');
-
-
 
 #[derive(Clone,Copy)]
 struct Parser<'a> {
@@ -95,7 +91,7 @@ fn distance(left: &u64x4, right: &u64x4) -> u64 {
     (diff*diff).reduce_sum()
 }
 
-fn parse_input(input: &[u8]) -> Parser {
+fn parse_input(input: &[u8]) -> Parser<'_> {
     Parser { lines: lines(input) }
 }
 
@@ -119,7 +115,7 @@ fn main() {
 }
 
 fn part_one(parser: Parser, limit: usize) -> usize {
-    let (distance, total) = calculate_initial_state(parser, limit);
+    let (distance, _total) = calculate_initial_state(parser, limit);
 
     let mut circuits = distance.fold(Vec::new(), connect_circuit);
     circuits.sort_by(|a, b| b.len().cmp(&a.len()));
@@ -136,7 +132,7 @@ fn part_two(parser: Parser, limit: usize) -> u64 {
         connect_circuit_until_circuit_length(total)
     );
 
-    let test = distance.items.iter().take(20).fold(HashSet::new(), |mut acc, (_, left, right)| {
+    let _test = distance.items.iter().take(20).fold(HashSet::new(), |mut acc, (_, left, right)| {
         acc.insert(left);
         acc.insert(right);
         acc
@@ -146,7 +142,7 @@ fn part_two(parser: Parser, limit: usize) -> u64 {
     value.0[0] * value.1[0]
 }
 
-fn calculate_initial_state(mut parser: Parser, limit: usize) -> (HeapWithLimit, usize) {
+fn calculate_initial_state(parser: Parser, limit: usize) -> (HeapWithLimit, usize) {
     let (junction_boxes, distance) = parser.fold(
         (Vec::new(), HeapWithLimit::new(limit)),
         |(mut vectors, v), line| {
@@ -179,7 +175,7 @@ fn connect_circuit_until_circuit_length(limit: usize) -> impl FnMut(Vec<Vec<u64x
 }
 
 fn connect_pair(circuits: &mut Vec<Vec<u64x4>>, left: u64x4, right: u64x4) -> Option<usize> {
-    let (first_x, second_x) = (left.to_array()[0], right.to_array()[0]);
+    let (_first_x, _second_x) = (left.to_array()[0], right.to_array()[0]);
 
     let circuit = (
         circuits.iter().position(|v| v.contains(&left)),
@@ -207,7 +203,7 @@ fn connect_pair(circuits: &mut Vec<Vec<u64x4>>, left: u64x4, right: u64x4) -> Op
             circuits.push(vec![left, right]);
             Some(circuits.len() - 1)
         }
-        other => None
+        _other => None
     };
     position
 }
