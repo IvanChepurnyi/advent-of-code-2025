@@ -2,12 +2,20 @@
 
 use std::collections::VecDeque;
 use std::simd::prelude::*;
+use aoc2025::{measure, Task};
 
 fn main() {
     let input = include_bytes!("../../inputs/day4.txt");
-    let mut grid: Vec<[_; 256]> = parse_grid(input);
-    println!("Result Part1: {}", part1_available_rolls(&grid));
-    println!("Result Part1: {}", part2_available_rolls(&mut grid));
+
+    measure(Task::Part1, || {
+        let grid: Vec<[_; 256]> = parse_grid(input);
+        part1_available_rolls(&grid)
+    });
+
+    measure(Task::Part2, || {
+        let mut grid: Vec<[_; 256]> = parse_grid(input);
+        part2_available_rolls(&mut grid)
+    });
 }
 
 fn parse_grid<const L: usize>(input: &[u8]) -> Vec<[i8; L]> {

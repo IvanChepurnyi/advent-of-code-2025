@@ -1,15 +1,19 @@
-use aoc2025::NumberExt;
+use aoc2025::{measure, NumberExt, Task};
 
 fn main() {
     let input = include_bytes!("../../inputs/day1.txt");
 
-    let slices = input.split(|&b| b == b'\n' || b == b' ');
-    let numbers = slices.filter_map(parse_slice).collect::<Vec<_>>();
-    let result_part1 = part1(&numbers);
-    let result_part2 = part2(&numbers);
+    measure(Task::Part1, || {
+        let slices = input.split(|&b| b == b'\n' || b == b' ');
+        let numbers = slices.filter_map(parse_slice).collect::<Vec<_>>();
+        part1(&numbers)
+    });
 
-    println!("Result for Part 1: {}", result_part1);
-    println!("Result for Part 2: {}", result_part2);
+    measure(Task::Part2, || {
+        let slices = input.split(|&b| b == b'\n' || b == b' ');
+        let numbers = slices.filter_map(parse_slice).collect::<Vec<_>>();
+        part2(&numbers)
+    });
 }
 
 fn parse_slice(slice:&[u8]) -> Option<i16> {

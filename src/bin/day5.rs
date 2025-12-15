@@ -3,7 +3,7 @@
 use std::cmp::Ordering;
 use std::ops::RangeInclusive;
 use std::simd::prelude::*;
-use aoc2025::NumberExt;
+use aoc2025::{measure, NumberExt, Task};
 
 #[derive(Debug, PartialEq, Eq)]
 struct SimdRange
@@ -53,10 +53,15 @@ impl Ord for SimdRange {
 fn main() {
     let input = include_bytes!("../../inputs/day5.txt");
 
-    let (ranges, numbers) = parse_input(input);
+    measure(Task::Part1, || {
+        let (ranges, numbers) = parse_input(input);
+        part1(&ranges, &numbers)
+    });
 
-    println!("Part 1: {}", part1(&ranges, &numbers));
-    println!("Part 2: {}", part2(&ranges));
+    measure(Task::Part2, || {
+        let (ranges, _) = parse_input(input);
+        part2(&ranges)
+    });
 }
 
 const RANGE_SPLIT: u8x32 = u8x32::splat(b'-');

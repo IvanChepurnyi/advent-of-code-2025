@@ -4,7 +4,7 @@ extern crate core;
 use std::collections::BTreeMap;
 use std::ops::ControlFlow;
 use std::simd::prelude::*;
-use aoc2025::{lines, Lines, NumberExt};
+use aoc2025::{lines, measure, Lines, NumberExt, Task};
 
 const PATTERN: u8x32 = u8x32::splat(b',');
 
@@ -92,8 +92,8 @@ fn read_int<'a>(line: &'a[u8], scan: &mut u64) -> (u64, &'a[u8]) {
 fn main() {
     let input = parse_input(include_bytes!("../../inputs/day8.txt"));
 
-    println!("Part 1 Result: {}", part_one(input, 1000));
-    println!("Part 2 Result: {}", part_two(input));
+    measure(Task::Part1, || part_one(input, 1000));
+    measure(Task::Part2, || part_two(input));
 }
 
 fn part_one(parser: Parser, limit: usize) -> usize {

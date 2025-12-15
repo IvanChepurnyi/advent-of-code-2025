@@ -1,12 +1,12 @@
 #![feature(portable_simd)]
 
-use aoc2025::NumberExt;
+use aoc2025::{measure, NumberExt, Task};
 
 fn main() {
     let input = include_bytes!("../../inputs/day3.txt");
 
-    println!("Part 1 Result: {}", part1(input.split(|c| *c == b'\n').filter(|v| v.len() == 100)));
-    println!("Part 2 Result: {}", part2(input.split(|c| *c == b'\n').filter(|v| v.len() == 100)));
+    measure(Task::Part1, || part1(input.split(|c| *c == b'\n').filter(|v| v.len() == 100)));
+    measure(Task::Part1, || part2(input.split(|c| *c == b'\n').filter(|v| v.len() == 100)));
 }
 
 fn part1<'a>(input: impl Iterator<Item=&'a[u8]>) -> u16 {

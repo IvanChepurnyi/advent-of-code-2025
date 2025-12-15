@@ -3,7 +3,7 @@
 
 use std::ops::{Index, IndexMut, Range};
 use std::simd::prelude::*;
-use aoc2025::{line, NumberExt};
+use aoc2025::{line, measure, NumberExt, Task};
 
 #[derive(Debug, PartialEq)]
 enum Op {
@@ -66,8 +66,9 @@ impl Op {
 
 fn main() {
     let input = include_bytes!("../../inputs/day6.txt");
-    println!("Part One: {}", part_one::<4>(input));
-    println!("Part Two: {}", part_two::<4>(input));
+
+    measure(Task::Part1, || part_one::<4>(input));
+    measure(Task::Part2, || part_two::<4>(input));
 }
 
 fn part_one<const N: usize>(input: &[u8]) -> u64

@@ -1,12 +1,12 @@
 #![feature(portable_simd)]
 use std::simd::prelude::*;
-use aoc2025::lines;
+use aoc2025::{lines, measure, Task};
 
 fn main() {
     let input = include_bytes!("../../inputs/day7.txt");
 
-    println!("Part1 Result: {}", part1(input));
-    println!("Part2 Result: {}", part2(input));
+    measure(Task::Part1, || part1(input));
+    measure(Task::Part2, || part2(input));
 }
 
 const BEAM: u8 = b'|';

@@ -1,13 +1,13 @@
 #![feature(slice_split_once)]
 
 use std::ops::RangeInclusive;
-use aoc2025::{digits, factors, NumberExt};
+use aoc2025::{digits, factors, measure, NumberExt, Task};
 
 fn main() {
     let input = include_bytes!("../../inputs/day2.txt");
 
-    println!("Result for Part 1: {}", sum_invalid(input, invalid_id_part1));
-    println!("Result for Part 2: {}", sum_invalid(input, invalid_id_part2));
+    measure(Task::Part1, || sum_invalid(input, invalid_id_part1));
+    measure(Task::Part2, || sum_invalid(input, invalid_id_part2));
 }
 
 fn from_ranges(input: &[u8]) -> impl Iterator<Item=u64> {

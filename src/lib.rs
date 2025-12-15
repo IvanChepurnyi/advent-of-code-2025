@@ -1,6 +1,9 @@
 #![feature(portable_simd)]
+
+use std::fmt::Display;
 use std::ops::{AddAssign, MulAssign};
 use std::simd::prelude::*;
+use std::time::Instant;
 
 pub trait NumberExt {
     fn from_bytes(slice: &[u8]) -> Self;
@@ -69,6 +72,29 @@ pub fn digits(value: u64) -> u8 {
 
 pub fn factors(value: u8) -> impl Iterator<Item=u8> {
     (2..value).filter_map(move |factor| if value % factor == 0 { Some(factor) } else { None })
+}
+
+pub enum Task
+{
+    Part1,
+    Part2,
+}
+
+impl Display for Task {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
+        match self {
+            Task::Part1 => formatter.write_str("Part 1"),
+            Task::Part2 => formatter.write_str("Part 2"),
+        }
+    }
+}
+
+pub fn measure<F: FnOnce() -> R, R>(task: Task, operation: F) where R: Display {
+    let start = Instant::now();
+    let result = operation();
+    let elapsed = start.elapsed();
+
+    println!("Task {task} result is {result} and it took {} ms", elapsed.as_millis());
 }
 
 #[cfg(test)]
