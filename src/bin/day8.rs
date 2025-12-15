@@ -41,7 +41,7 @@ impl HeapWithLimit {
     }
 
     fn iter(&self) -> impl Iterator<Item=(Coordinate, Coordinate)> {
-        self.items.iter().map(|(k,(v))| (v.0, v.1))
+        self.items.iter().map(|(_k,v)| (v.0, v.1))
     }
 }
 
@@ -97,7 +97,7 @@ fn main() {
 }
 
 fn part_one(parser: Parser, limit: usize) -> usize {
-    let (mut distance, total) = calculate_initial_state(parser);
+    let (distance, _total) = calculate_initial_state(parser);
 
     let mut circuits = distance.iter().take(limit).fold(Vec::new(), connect_circuit);
     circuits.sort_by(|a, b| b.len().cmp(&a.len()));
