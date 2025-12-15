@@ -8,3 +8,8 @@ name = "aoc2025"
 path = "src/lib.rs"
 
 [dependencies]
+
+[profile.release]
+codegen-units = 1
+lto = "fat"
+debug = "full"

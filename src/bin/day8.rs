@@ -1,11 +1,24 @@
 #![feature(portable_simd)]
 
-use std::collections::HashSet;
+use std::collections::btree_map::Iter;
+use std::collections::BTreeMap;
 use std::ops::ControlFlow;
 use std::simd::prelude::*;
 use aoc2025::{lines, Lines, NumberExt};
 
 const PATTERN: u8x32 = u8x32::splat(b',');
+
+#[derive(Debug, Eq, PartialEq, Clone, Copy, Default)]
+struct Coordinate(u64, u64, u64);
+
+impl Coordinate {
+    fn distance(&self, other: &Coordinate) -> u64 {
+        let left = u64x4::load_or_default(&[self.0, self.1, self.2]);
+        let right = u64x4::load_or_default(&[other.0, other.1, other.2]);
+
+        distance(&left, &right)
+    }
+}
 
 #[derive(Clone,Copy)]
 struct Parser<'a> {
@@ -14,43 +27,26 @@ struct Parser<'a> {
 
 struct HeapWithLimit {
     limit: usize,
-    items: Vec<(u64, u64x4, u64x4)>,
-    index: usize,
+    items: BTreeMap<u64,(Coordinate, Coordinate)>,
+    iterator: Option<Iter<'static, usize, (Coordinate, Coordinate)>>,
 }
 
 impl HeapWithLimit {
     pub fn new(limit: usize) -> Self {
         Self {
-            items: Vec::with_capacity(limit),
+            items: BTreeMap::new(),
             limit,
             index: 0,
         }
     }
 
-    pub fn add(&mut self, distance: u64, left: u64x4, right: u64x4) {
-        let mut value = (distance, left, right);
-
-        match (self.items.iter().position(|v| v.0 > distance), self.limit > self.items.len()) {
-            (Some(position), true)  => {
-                self.items.insert(position, value);
-            },
-            (None, true) => {
-                self.items.insert(0, value);
-            }
-            (Some(position), false) => {
-                std::mem::swap(&mut self.items[position], &mut value);
-                if position + 1 < self.items.len() {
-                    self.items.pop();
-                    self.items.insert(position + 1, value);
-                }
-            },
-            _ => {}
-        }
+    pub fn add(&mut self, distance: u64, left: Coordinate, right: Coordinate) {
+        self.items.insert(distance, (left, right));
     }
 }
 
 impl Iterator for HeapWithLimit {
-    type Item = (u64x4, u64x4);
+    type Item = (Coordinate, Coordinate);
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.index == self.items.len() {
@@ -64,7 +60,7 @@ impl Iterator for HeapWithLimit {
 }
 
 impl Iterator for Parser<'_> {
-    type Item = u64x4;
+    type Item = Coordinate;
 
     fn next(&mut self) -> Option<Self::Item> {
         match self.lines.next() {
@@ -73,13 +69,13 @@ impl Iterator for Parser<'_> {
                 if scan.count_ones() != 2 {
                     return None;
                 }
-                let mut vector = [0u64; 4];
+                let mut coordinate = Coordinate::default();
 
-                (vector[0], line) = read_int(line, &mut scan);
-                (vector[1], line) = read_int(line, &mut scan);
-                (vector[2], _) = read_int(line, &mut scan);
+                (coordinate.0, line) = read_int(line, &mut scan);
+                (coordinate.1, line) = read_int(line, &mut scan);
+                (coordinate.2, _) = read_int(line, &mut scan);
 
-                Some(u64x4::from_array(vector))
+                Some(coordinate)
             },
             None => None,
         }
@@ -115,7 +111,7 @@ fn main() {
 }
 
 fn part_one(parser: Parser, limit: usize) -> usize {
-    let (distance, _total) = calculate_initial_state(parser, limit);
+
 
     let mut circuits = distance.fold(Vec::new(), connect_circuit);
     circuits.sort_by(|a, b| b.len().cmp(&a.len()));
@@ -132,14 +128,8 @@ fn part_two(parser: Parser, limit: usize) -> u64 {
         connect_circuit_until_circuit_length(total)
     );
 
-    let _test = distance.items.iter().take(20).fold(HashSet::new(), |mut acc, (_, left, right)| {
-        acc.insert(left);
-        acc.insert(right);
-        acc
-    });
-
     let value = result.break_value().expect("Must be set after iterations");
-    value.0[0] * value.1[0]
+    value.0.0 * value.1.0
 }
 
 fn calculate_initial_state(parser: Parser, limit: usize) -> (HeapWithLimit, usize) {
@@ -147,7 +137,7 @@ fn calculate_initial_state(parser: Parser, limit: usize) -> (HeapWithLimit, usiz
         (Vec::new(), HeapWithLimit::new(limit)),
         |(mut vectors, v), line| {
             let v = vectors.iter().fold(v, |mut v, other| {
-                v.add(distance(other, &line), *other, line);
+                v.add(line.distance(other), *other, line);
                 v
             });
             vectors.push(line);
@@ -160,12 +150,12 @@ fn calculate_initial_state(parser: Parser, limit: usize) -> (HeapWithLimit, usiz
     (distance, junctions)
 }
 
-fn connect_circuit(mut circuits: Vec<Vec<u64x4>>, (left, right): (u64x4, u64x4)) -> Vec<Vec<u64x4>> {
+fn connect_circuit(mut circuits: Vec<Vec<Coordinate>>, (left, right): (Coordinate, Coordinate)) -> Vec<Vec<Coordinate>> {
     let _ = connect_pair(&mut circuits, left, right);
     circuits
 }
 
-fn connect_circuit_until_circuit_length(limit: usize) -> impl FnMut(Vec<Vec<u64x4>>, (u64x4, u64x4)) -> ControlFlow<(u64x4, u64x4), Vec<Vec<u64x4>>> {
+fn connect_circuit_until_circuit_length(limit: usize) -> impl FnMut(Vec<Vec<Coordinate>>, (Coordinate, Coordinate)) -> ControlFlow<(Coordinate, Coordinate), Vec<Vec<Coordinate>>> {
     move |mut circuits, (left, right)| {
         match connect_pair(&mut circuits, left, right) {
             Some(position) if circuits[position].len() == limit => ControlFlow::Break((left, right)),
@@ -174,9 +164,7 @@ fn connect_circuit_until_circuit_length(limit: usize) -> impl FnMut(Vec<Vec<u64x
     }
 }
 
-fn connect_pair(circuits: &mut Vec<Vec<u64x4>>, left: u64x4, right: u64x4) -> Option<usize> {
-    let (_first_x, _second_x) = (left.to_array()[0], right.to_array()[0]);
-
+fn connect_pair(circuits: &mut Vec<Vec<Coordinate>>, left: Coordinate, right: Coordinate) -> Option<usize> {
     let circuit = (
         circuits.iter().position(|v| v.contains(&left)),
         circuits.iter().position(|v| v.contains(&right)),
@@ -203,7 +191,7 @@ fn connect_pair(circuits: &mut Vec<Vec<u64x4>>, left: u64x4, right: u64x4) -> Op
             circuits.push(vec![left, right]);
             Some(circuits.len() - 1)
         }
-        _other => None
+        _ => None
     };
     position
 }
@@ -267,26 +255,26 @@ mod tests {
         assert_eq!(
             test_data().collect::<Vec<_>>(),
             vec![
-                u64x4::from_array([162, 817, 812, 0]),
-                u64x4::from_array([57, 618, 57, 0]),
-                u64x4::from_array([906, 360, 560, 0]),
-                u64x4::from_array([592, 479, 940, 0]),
-                u64x4::from_array([352, 342, 300, 0]),
-                u64x4::from_array([466, 668, 158, 0]),
-                u64x4::from_array([542, 29, 236, 0]),
-                u64x4::from_array([431, 825, 988, 0]),
-                u64x4::from_array([739, 650, 466, 0]),
-                u64x4::from_array([52, 470, 668, 0]),
-                u64x4::from_array([216, 146, 977, 0]),
-                u64x4::from_array([819, 987, 18, 0]),
-                u64x4::from_array([117, 168, 530, 0]),
-                u64x4::from_array([805, 96, 715, 0]),
-                u64x4::from_array([346, 949, 466, 0]),
-                u64x4::from_array([970, 615, 88, 0]),
-                u64x4::from_array([941, 993, 340, 0]),
-                u64x4::from_array([862, 61, 35, 0]),
-                u64x4::from_array([984, 92, 344, 0]),
-                u64x4::from_array([425, 690, 689, 0])
+                Coordinate(162, 817, 812),
+                Coordinate(57, 618, 57),
+                Coordinate(906, 360, 560),
+                Coordinate(592, 479, 940),
+                Coordinate(352, 342, 300),
+                Coordinate(466, 668, 158),
+                Coordinate(542, 29, 236),
+                Coordinate(431, 825, 988),
+                Coordinate(739, 650, 466),
+                Coordinate(52, 470, 668),
+                Coordinate(216, 146, 977),
+                Coordinate(819, 987, 18),
+                Coordinate(117, 168, 530),
+                Coordinate(805, 96, 715),
+                Coordinate(346, 949, 466),
+                Coordinate(970, 615, 88),
+                Coordinate(941, 993, 340),
+                Coordinate(862, 61, 35),
+                Coordinate(984, 92, 344),
+                Coordinate(425, 690, 689)
             ]
         );
     }
